@@ -244,6 +244,15 @@ patch_steam_scripts() {
     printf 'Successfully patched steam.sh and client.sh for LD_AUDIT injection.\n'
 }
 
+prompt_read() {
+    local -n _ref="$1"
+    if [[ ! -t 0 ]] && [[ -e /dev/tty && -r /dev/tty ]]; then
+        IFS= read -r _ref </dev/tty || _ref=""
+    else
+        IFS= read -r _ref || _ref=""
+    fi
+}
+
 maybe_patch_steam() {
     if [[ -z "$target_client_version" ]]; then
         printf '\nNotice: Unable to check the latest recommended compatible version from upstream (offline or unreachable).\n'
@@ -252,7 +261,7 @@ maybe_patch_steam() {
         if ! "$opt_patch_only" && ! "$opt_yes"; then
             local proceed_answer
             printf 'Do you want to continue anyway? [y/N] '
-            IFS= read -r proceed_answer || proceed_answer=""
+            prompt_read proceed_answer
             case "$proceed_answer" in
                 y|Y|yes|YES|Yes) ;;
                 *)
@@ -269,7 +278,7 @@ maybe_patch_steam() {
         if ! "$opt_patch_only" && ! "$opt_yes"; then
             local proceed_answer
             printf 'Do you want to continue anyway? [y/N] '
-            IFS= read -r proceed_answer || proceed_answer=""
+            prompt_read proceed_answer
             case "$proceed_answer" in
                 y|Y|yes|YES|Yes) ;;
                 *)
@@ -287,7 +296,7 @@ maybe_patch_steam() {
 
     local answer
     printf '\nPatch Steam launch scripts (steam.sh and client.sh with LD_AUDIT)? [Y/n] '
-    IFS= read -r answer || answer=""
+    prompt_read answer
     case "$answer" in
         n|N|no|NO|No)
             printf 'Skipped launch-script patching.\n'
@@ -310,7 +319,7 @@ maybe_create_steam_cfg() {
 
     if ! "$opt_cfg_only" && ! "$opt_yes"; then
         printf '\nOptional step: create steam.cfg to inhibit Steam self-updates? [y/N] '
-        IFS= read -r answer || answer=""
+        prompt_read answer
         case "$answer" in
             y|Y|yes|YES|Yes) ;;
             *) printf 'Skipped steam.cfg.\n'; return 0 ;;
