@@ -1,53 +1,56 @@
-# <img src="https://github.com/Deadboy666/h3adcr-b-modul3s/blob/main/headcrab.png?raw=true" alt="Project Logo" width="175" height="175">h3adcr-b
-Headcrab is a rootless Steam client compatibility helper
-- **Requirements**: `wget`, `curl`, `grep`, `awk`, `sed`, `7zip`
-## Features
-- Installs the latest SLSsteam release.
-- Overides Steam client updates to maintain compatibility with SLSsteam updates.
-- Rootless operation* *As Long as The Dependacies Are Met.*
-- Updates Users SLSsteam config.
-## How it works
-1. Detects Steam install type: Native, Flatpak, or SteamOS.
-2. Reads the installed Steam client manifest and compares it against the compatible version.
-3. If compatible, it installs and setup SLSsteam injection.
-4. If incompatible, it fetches the required client files and forces a client update using a local override URL.
-5. Patches Steam launch scripts to enable LD_AUDIT injection and updates SLSsteam config.
-   
-## Disclaimer For SteamOS Users
-- Since how steamos is done forcing bash to be in exit one theres one extra step you have to do.
-- You only have to do it once before running headcrab if its your first time using it.
-- follow the steps linked here then run headcrab :)
-- https://github.com/Deadboy666/h3adcr-b/wiki/Headcrab-Troubleshooting-For-Steamos
+# smallcrab
 
-## Supported Client Installs:
-  - Native Installs (The Native Package That You Install On Your Distro)
-  - Flatpak Installs (Its Native In A Limited Container)
-  - Handheld/HTPC Installs (ex. `SteamOS`, `CachyOS`, `Chimera`, `Bazzite`,`Nobara`)
+A patch-only fork of [h3adcr-b](https://github.com/Deadboy666/h3adcr-b).
 
- ## Distro's Supported By h3adcr-b.
-   * Fedora Based Distros
-      - Mutable (Normally Fedora Spins.)
-      - Atomic (Ublue Based Distros)
-        
-   * Arch Based Distros
-     - Arch Based Distros (ex. `Manjaro`, `CachyOS`, `Endevour`, `ArchBTW`)
-       
-   * Ubuntu/Debian Based Distros.
-   * Void Linux Based Distros.
- ## Getting Started
- * Installing Headcrab
- * Cloudflare Redirect.
-```bash
-curl -fsSL headcrab.pages.dev | bash
+Smallcrab does one thing: replace `steam.sh` and `client.sh` in your Steam install with the SLSsteam-patched versions from the h3adcr-b-modul3s repo. Nothing else.
+
+It does **not**:
+
+- Download or extract SLSsteam / Netsock.
+- Downgrade the Steam client.
+- Modify `config.yaml`.
+- Install Cloud Redirect libraries or flatpaks.
+- Install system packages.
+- Kill or launch Steam.
+
+If you need any of those, use the [full headcrab](https://github.com/Deadboy666/h3adcr-b).
+
+## Prerequisites
+
+Before running smallcrab you must already have:
+
+- Steam installed (Native or Flatpak).
+- SLSsteam's `library-inject.so` and `SLSsteam.so` in `~/.local/share/SLSsteam/` (Native) or `~/.var/app/com.valvesoftware.Steam/.local/share/SLSsteam/` (Flatpak).
+- `~/.config/SLSsteam/config.yaml` (or its Flatpak equivalent) configured the way you want it. smallcrab reads it (read-only) to decide whether to apply the CloudRedirect variant of the patch.
+- Steam **closed**. If Steam is running when you patch, the live process will overwrite your changes.
+
+## Requirements
+
+`wget`, `grep`. That's it.
+
+## Usage
+
 ```
-* Incase the Redirect Doesnt work.
-```bash
-curl -fsSL "https://runn.i.ng/Deadboy666/h3adcr-b/refs/heads/main/headcrab.sh" | bash
+./headcrab.sh
 ```
 
-- For Troubleshooting h3adcr-b* [View the Wiki](https://github.com/Deadboy666/h3adcr-b/wiki/Headcrab-Wiki)
+The script is idempotent -- run it again and it just re-fetches the same files.
 
+## How it picks the patch variant
 
+- Native vs Flatpak is decided by whether `~/.var/app/com.valvesoftware.Steam/.steam/steam/` exists.
+- CloudRedirect vs standard is decided by whether your existing `config.yaml` contains `DisableCloud: no`.
 
+If neither config exists, smallcrab will create an empty config dir but won't write a `config.yaml` for you -- make one yourself.
 
+## Caveats
 
+- **No compatible-version check.** The full headcrab reads Steam's client manifest and downgrades if it's too new. smallcrab does not. If your Steam client is newer than what the patched `steam.sh` supports, Steam will refuse to launch. Verify compatibility yourself, or run the full headcrab once to handle the downgrade.
+- **The patch URLs come from upstream modules.** They can go stale if the upstream `h3adcr-b-modul3s` repo restructures. If a fetch fails, that's the most likely cause.
+- **CloudRedirect branch is read-only.** smallcrab never edits `config.yaml`. It only inspects `DisableCloud` to pick a URL.
+
+## License / credit
+
+Forked from [h3adcr-b](https://github.com/Deadboy666/h3adcr-b) by Deadboy666. The patch URLs and CloudRedirect branch logic come from the [h3adcr-b-modul3s](https://github.com/Deadboy666/h3adcr-b-modul3s) repo.
+
+the headcrab approaches..
