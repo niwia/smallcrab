@@ -1,56 +1,73 @@
 # smallcrab
 
-A patch-only fork of [h3adcr-b](https://github.com/Deadboy666/h3adcr-b).
+A lightweight, patch-only fork of [h3adcr-b](https://github.com/Deadboy666/h3adcr-b).
 
-Smallcrab does one thing: replace `steam.sh` and `client.sh` in your Steam install with the SLSsteam-patched versions from the h3adcr-b-modul3s repo. Nothing else.
+Smallcrab replaces `steam.sh` and `client.sh` in your Steam install with the SLSsteam `LD_AUDIT` launch scripts from the upstream repository, and optionally creates `steam.cfg` to inhibit automatic Steam self-updates.
 
-It does **not**:
+## What Smallcrab does
 
-- Download or extract SLSsteam / Netsock.
-- Downgrade the Steam client.
-- Modify `config.yaml`.
-- Install Cloud Redirect libraries or flatpaks.
-- Install system packages.
-- Kill or launch Steam.
+- Detects Native Steam and Flatpak Steam installations.
+- Reports Linux distribution, Steam install paths, and Steam client version/channel (if manifest is found).
+- Checks installed Steam client version against the compatible client version targeted by upstream Headcrab (`HeadcrabCompatibleClientVer`), warning before patching if there is a version mismatch.
+- Checks whether SLSsteam libraries (`library-inject.so` and `SLSsteam.so`) exist in the expected directory.
+- Replaces `$SteamInstallDir/client.sh` and `$SteamInstallDir/steam.sh` with the LD_AUDIT-enabled launchers from upstream, setting appropriate file permissions (`chmod 555 steam.sh` and `chmod 755 client.sh`).
+- Identical file footprint: Writes files to the exact same paths and formats as Headcrab (`client.sh`, `steam.sh`, `steam.cfg`), allowing seamless interoperability without conflicting with existing or future Headcrab setups.
+- Optionally creates `steam.cfg` to disable bootstrapper self-updates (`BootStrapperInhibitAll=enable` and `BootStrapperForceSelfUpdate=disable`).
+- Safeguard: Refuses to patch if Steam is actively running to prevent live-process overwrite conflicts.
 
-If you need any of those, use the [full headcrab](https://github.com/Deadboy666/h3adcr-b).
+## What Smallcrab does NOT do
 
-## Prerequisites
+- Does not download or build SLSsteam binaries (`library-inject.so` / `SLSsteam.so`).
+- Does not modify or read `config.yaml`.
+- Does not install system distro packages (`apt`, `pacman`, `xbps`).
+- Does not run the Steam client downgrade/manifest pipeline (`dgsc` / `dlm`).
+- Does not launch or terminate Steam.
 
-Before running smallcrab you must already have:
-
-- Steam installed (Native or Flatpak).
-- SLSsteam's `library-inject.so` and `SLSsteam.so` in `~/.local/share/SLSsteam/` (Native) or `~/.var/app/com.valvesoftware.Steam/.local/share/SLSsteam/` (Flatpak).
-- `~/.config/SLSsteam/config.yaml` (or its Flatpak equivalent) configured the way you want it. smallcrab reads it (read-only) to decide whether to apply the CloudRedirect variant of the patch.
-- Steam **closed**. If Steam is running when you patch, the live process will overwrite your changes.
+If you require the full automated installation pipeline (downgrading, binary downloads, system packages, config editing), see upstream [h3adcr-b](https://github.com/Deadboy666/h3adcr-b).
 
 ## Requirements
 
-`wget`, `grep`. That's it.
+- Bash
+- `awk`, `readlink`, `pgrep`
+- `curl` or `wget`
 
 ## Usage
 
+Interactive run:
+```sh
+./smallcrab.sh
 ```
-./headcrab.sh
+
+### Options
+
+```
+Usage: smallcrab.sh [OPTIONS]
+
+Options:
+  -c, --check       Check and report Steam / SLSsteam status without making changes
+  -p, --patch       Patch launch scripts (steam.sh & client.sh) non-interactively
+  --cfg             Create steam.cfg non-interactively if missing
+  -y, --yes         Auto-confirm all prompts (patch scripts and create steam.cfg)
+  -h, --help        Show this help message and exit
 ```
 
-The script is idempotent -- run it again and it just re-fetches the same files.
+Examples:
 
-## How it picks the patch variant
+```sh
+# Inventory check only:
+./smallcrab.sh --check
 
-- Native vs Flatpak is decided by whether `~/.var/app/com.valvesoftware.Steam/.steam/steam/` exists.
-- CloudRedirect vs standard is decided by whether your existing `config.yaml` contains `DisableCloud: no`.
+# Patch launch scripts non-interactively:
+./smallcrab.sh --patch
 
-If neither config exists, smallcrab will create an empty config dir but won't write a `config.yaml` for you -- make one yourself.
+# Non-interactive full run (patch launch scripts and create steam.cfg):
+./smallcrab.sh --yes
+```
 
-## Caveats
+## Patch Variants
 
-- **No compatible-version check.** The full headcrab reads Steam's client manifest and downgrades if it's too new. smallcrab does not. If your Steam client is newer than what the patched `steam.sh` supports, Steam will refuse to launch. Verify compatibility yourself, or run the full headcrab once to handle the downgrade.
-- **The patch URLs come from upstream modules.** They can go stale if the upstream `h3adcr-b-modul3s` repo restructures. If a fetch fails, that's the most likely cause.
-- **CloudRedirect branch is read-only.** smallcrab never edits `config.yaml`. It only inspects `DisableCloud` to pick a URL.
+- **Native vs Flatpak**: Selected automatically based on detected Steam installation (`Native-SLSsteam` vs `Flatpak-SLSsteam`).
 
-## License / credit
+## Credit
 
-Forked from [h3adcr-b](https://github.com/Deadboy666/h3adcr-b) by Deadboy666. The patch URLs and CloudRedirect branch logic come from the [h3adcr-b-modul3s](https://github.com/Deadboy666/h3adcr-b-modul3s) repo.
-
-the headcrab approaches..
+Forked and adapted from [h3adcr-b](https://github.com/Deadboy666/h3adcr-b) by Deadboy666. Upstream launch scripts and modules provided by [h3adcr-b-modul3s](https://github.com/Deadboy666/h3adcr-b-modul3s).
